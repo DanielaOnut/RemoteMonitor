@@ -176,7 +176,12 @@ color: rgb(1, 102, 48);</string>
          </widget>
         </item>
         <item>
-         <widget class="QToolButton" name="toolButton_2">
+         <widget class="QToolButton" name="deleteBtn">
+          <property name="styleSheet">
+           <string notr="true">QToolButton:hover {
+	background-color: rgb(255, 226, 226);
+}</string>
+          </property>
           <property name="text">
            <string>...</string>
           </property>

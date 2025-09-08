@@ -42,6 +42,8 @@ public:
 
 public slots:
     void addConnection (QString, QString);
+    void machineWentOffline ();
+    void machineIsBackOnline ();
 
 signals:
     void closeDialog ();

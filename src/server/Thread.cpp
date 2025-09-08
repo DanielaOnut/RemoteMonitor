@@ -87,13 +87,13 @@ pair Thread::verifyToken(const QByteArray &request) {
         return {"Failed: jwt token doesn't have any claim named 'id'", "401 Unauthorized"};
 
     std::string id = decoded.get_payload_claim("id").as_string();
-    if (!this->server->clientExists(id))
-        return {"Failed: no client exists with this id", "401 Unauthorized"};
+    // if (!this->server->clientExists(id))
+    //     return {"Failed: no client exists with this id", "401 Unauthorized"};
 
     try {
         auto verifier = jwt::verify()
             .with_issuer("remoteserver")
-            .with_claim("id", jwt::claim(id))
+            // .with_claim("id", jwt::claim(id))
             .allow_algorithm(jwt::algorithm::hs256{"remote-monitor-project-super-key"});
 
         verifier.verify(decoded);

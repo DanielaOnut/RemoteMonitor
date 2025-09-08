@@ -63,10 +63,23 @@ void MachineFrame::sendUpdateRequest (const QString route) {
         
         if (response.contains("token expired")) 
             this->getNewJwtToken(reply, request);
-        else {
+        else if (!response.contains("Failed")) {
             /// TODO: to keep a list of clients connected in the past (id based)
             /// to set the server online after it's up 
             std::cout << response.toStdString() << '\n';
+
+            if (!this->machineIsOn) {
+                this->updateTimer->start();
+                this->machineIsOn = true;
+                this->ui->statusLabel->setStyleSheet("background-color: rgba(220,252,231,255); color: rgb(1, 102, 48);");
+                this->ui->statusLabel->setText("Online");
+
+                QPixmap image (":images/images/onlinePC.png");
+                this->ui->serverImage->setPixmap(image);
+                this->ui->frame->show();
+                this->ui->stackedWidget->show();
+                emit this->connReestablished();
+            }
         
             this->setUpdateLabelTime();
             QByteArrayList statusesList = response.split('\n');
@@ -81,20 +94,7 @@ void MachineFrame::sendUpdateRequest (const QString route) {
     connect(reply, &QNetworkReply::sslErrors, [reply](const QList<QSslError> &errors){ reply->ignoreSslErrors(); });
 
     connect(reply, &QNetworkReply::errorOccurred, [this, reply] {
-        if (reply->error() == QNetworkReply::ConnectionRefusedError
-            || reply->error() == QNetworkReply::HostNotFoundError
-            || reply->error() == QNetworkReply::TimeoutError) 
-                if (this->serverIsOn) {
-                    std::cout << reply->errorString().toStdString() << '\n';
-                    this->ui->statusLabel->setStyleSheet("background-color: #ffe2e2; color: #9f0819;");
-                    this->ui->statusLabel->setText("Offline");
-
-                    QPixmap image (":images/images/offlinePC.png");
-                    this->ui->serverImage->setPixmap(image);
-                    this->ui->frame->hide();
-                    this->ui->stackedWidget->hide();
-                    this->serverIsOn = false;
-                }
+        this->handleErrOccurred(reply);
         reply->deleteLater();
     });
 }
@@ -107,7 +107,7 @@ void MachineFrame::getNewJwtToken(QNetworkReply * reply, QNetworkRequest request
         QByteArray response = reply->readAll();
         if (response.contains("Failed")) {
             std::cout << response.toStdString() << '\n';
-            if (this->serverIsOn) {
+            if (this->machineIsOn) {
                 this->ui->statusLabel->setStyleSheet("background-color: #ffe2e2; color: #9f0819;");
                 this->ui->statusLabel->setText("Offline");
 
@@ -115,7 +115,7 @@ void MachineFrame::getNewJwtToken(QNetworkReply * reply, QNetworkRequest request
                 this->ui->serverImage->setPixmap(image);
                 this->ui->frame->hide();
                 this->ui->stackedWidget->hide();
-                this->serverIsOn = false;
+                this->machineIsOn = false;
             }
         }
         else
@@ -150,13 +150,13 @@ void MachineFrame::getOSInfo() {
         if (response.contains("token expired")) 
             this->getNewJwtToken(reply, request);
         else {
-            std::cout << response.toStdString() << '\n';
-        
             QByteArrayList osInfoList = response.split('\n');
             QByteArray osName = osInfoList[0].split('=')[1];
+            QByteArray osVersion = osInfoList[1].split('=')[1];
+            
             osName = osName.mid(1, osName.size() - 2);
-            this->ui->osLabel->setText(osName);
-            /// TODO: also add the version
+            osVersion = osVersion.mid(1, osVersion.size() - 2);
+            this->ui->osLabel->setText(osName + " " + osVersion);
         }
 
         reply->deleteLater();
@@ -164,7 +164,10 @@ void MachineFrame::getOSInfo() {
 
     connect(reply, &QNetworkReply::sslErrors, [reply](const QList<QSslError> &errors){ reply->ignoreSslErrors(); });
     
-    /// TODO: refine this (add error handling)
+    connect(reply, &QNetworkReply::errorOccurred, [this, reply] {
+        this->handleErrOccurred(reply);
+        reply->deleteLater();
+    });
 }
 
 void MachineFrame::setCpuUsage(const QByteArray & response) {
@@ -227,6 +230,25 @@ void MachineFrame::setDiskUsage(const QByteArray & response) {
     this->ui->diskUsageLabel->setText(text);
     this->ui->diskProgBar->setRange(0, (int)totalSpace.toDouble());
     this->ui->diskProgBar->setValue((int)usedSpace.toDouble());
+}
+
+void MachineFrame::handleErrOccurred(const QNetworkReply * reply) {
+    if (reply->error() == QNetworkReply::ConnectionRefusedError
+    || reply->error() == QNetworkReply::HostNotFoundError
+    || reply->error() == QNetworkReply::TimeoutError) 
+        if (this->machineIsOn) {
+            std::cout << reply->errorString().toStdString() << '\n';
+            this->ui->statusLabel->setStyleSheet("background-color: #ffe2e2; color: #9f0819;");
+            this->ui->statusLabel->setText("Offline");
+
+            QPixmap image (":images/images/offlinePC.png");
+            this->ui->serverImage->setPixmap(image);
+            this->ui->frame->hide();
+            this->ui->stackedWidget->hide();
+            emit this->connRefused();
+            this->machineIsOn = false;
+            this->updateTimer->stop();
+        }
 }
 
 MachineFrame::~MachineFrame() {

@@ -70,8 +70,10 @@ void Client::addConnection (QString machineName, QString ipaddress) {
      
         MachineFrame *frame = new MachineFrame(this, machineName, ipaddress);
         this->ui->verticalLayout_7->addWidget(frame);
-
         emit this->showConnSuccessLabel();
+
+        connect(frame, &MachineFrame::connRefused, this, &Client::machineWentOffline);
+        connect(frame, &MachineFrame::connReestablished, this, &Client::machineIsBackOnline);
         this->machinesMap[machineName] = frame;
         this->totalMachines++;
         this->onlineMachines++;
@@ -98,6 +100,22 @@ void Client::addConnection (QString machineName, QString ipaddress) {
             emit this->showConnFailedLabel();
         reply->deleteLater();
     });
+}
+
+void Client::machineWentOffline() {
+    this->onlineMachines--;
+    this->offlineMachines++;
+
+    this->ui->onlineMachinesLabel->setText(QString::number(this->onlineMachines));
+    this->ui->offlineMachinesLabel->setText(QString::number(this->offlineMachines));
+}
+
+void Client::machineIsBackOnline() {
+    this->onlineMachines++;
+    this->offlineMachines--;
+
+    this->ui->onlineMachinesLabel->setText(QString::number(this->onlineMachines));
+    this->ui->offlineMachinesLabel->setText(QString::number(this->offlineMachines));
 }
 
 Client::~Client()

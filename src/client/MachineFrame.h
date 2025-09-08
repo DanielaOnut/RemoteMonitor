@@ -28,7 +28,7 @@ private:
     QNetworkAccessManager * manager;
     QString * jwtToken = nullptr;
     QTimer * updateTimer;
-    bool serverIsOn = true;
+    bool machineIsOn = true;
 
     long long totalCpu = 0;
     long long workCpu = 0;
@@ -44,8 +44,14 @@ public:
     void setCpuUsage (const QByteArray &);
     void setRamUsage (const QByteArray &);
     void setDiskUsage (const QByteArray &);
+    void handleErrOccurred (const QNetworkReply *);
+    bool isMachineOn () { return this->machineIsOn; };
 
     ~MachineFrame();
+
+signals:
+    void connRefused();
+    void connReestablished();
 };
 
 #endif // MACHINEFRAME_H
