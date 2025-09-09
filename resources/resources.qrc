@@ -8,14 +8,20 @@
         <file>images/onlinePC.png</file>
         <file>images/offlinePC.png</file>
         <file>images/cpu.png</file>
+        <file>images/cpu2.png</file>
         <file>images/delete.png</file>
         <file>images/hard-disk.png</file>
         <file>images/ram.png</file>
+        <file>images/ram2.png</file>
         <file>images/refresh.png</file>
         <file>images/clock.png</file>
         <file>images/setting.png</file>
         <file>images/network.png</file>
         <file>images/top.png</file>
         <file>images/offlineMsg.png</file>
+        <file>images/beat.png</file>
+        <file>images/text.png</file>
+        <file>images/up.png</file>
+        <file>images/down.png</file>
     </qresource>
 </RCC>

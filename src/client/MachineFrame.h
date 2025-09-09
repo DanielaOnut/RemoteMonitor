@@ -46,12 +46,14 @@ public:
     void setDiskUsage (const QByteArray &);
     void handleErrOccurred (const QNetworkReply *);
     bool isMachineOn () { return this->machineIsOn; };
-
+    QString getMachineName ();
+    
     ~MachineFrame();
 
 signals:
     void connRefused();
     void connReestablished();
+    void machineDeleted(MachineFrame *);
 };
 
 #endif // MACHINEFRAME_H

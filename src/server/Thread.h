@@ -8,6 +8,7 @@
 #include <QSslSocket>
 #include <jwt-cpp/jwt.h>
 #include <sys/statvfs.h>
+#include <sys/utsname.h>
 #include "Server.h"
 
 typedef std::pair <std::string, const char*> pair;

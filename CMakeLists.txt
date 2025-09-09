@@ -20,6 +20,9 @@ add_executable(RemoteMonitor
         src/client/MachineFrame.h
         src/client/MachineFrame.cpp
         src/client/MachineFrame.ui
+        src/client/ProcessFrame.h
+        src/client/ProcessFrame.cpp
+        src/client/processframe.ui
         resources/resources.qrc
 )
 

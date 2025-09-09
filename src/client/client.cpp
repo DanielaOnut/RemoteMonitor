@@ -74,6 +74,7 @@ void Client::addConnection (QString machineName, QString ipaddress) {
 
         connect(frame, &MachineFrame::connRefused, this, &Client::machineWentOffline);
         connect(frame, &MachineFrame::connReestablished, this, &Client::machineIsBackOnline);
+        connect(frame, &MachineFrame::machineDeleted, this, &Client::deleteMachine);
         this->machinesMap[machineName] = frame;
         this->totalMachines++;
         this->onlineMachines++;
@@ -116,6 +117,26 @@ void Client::machineIsBackOnline() {
 
     this->ui->onlineMachinesLabel->setText(QString::number(this->onlineMachines));
     this->ui->offlineMachinesLabel->setText(QString::number(this->offlineMachines));
+}
+
+void Client::deleteMachine(MachineFrame *machine){
+    if (machine == nullptr)
+        return;
+
+    this->totalMachines--;
+    this->ui->totalMachinesLabel->setText(QString::number(this->totalMachines));
+    if (machine->isMachineOn()) {
+        this->onlineMachines--;
+        this->ui->onlineMachinesLabel->setText(QString::number(this->onlineMachines));
+    }
+    else {
+        this->offlineMachines--;
+        this->ui->offlineMachinesLabel->setText(QString::number(this->offlineMachines));
+    }
+
+    this->ui->verticalLayout_7->removeWidget(machine);
+    this->machinesMap.remove(machine->getMachineName());
+    delete machine;
 }
 
 Client::~Client()

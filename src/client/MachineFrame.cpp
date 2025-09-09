@@ -1,5 +1,6 @@
 #include "MachineFrame.h"
 #include "ui_MachineFrame.h"
+#include "ProcessFrame.h"
 
 MachineFrame::MachineFrame(QWidget *parent, const QString & machineName, const QString & ipaddress)
     : QFrame(parent)
@@ -38,6 +39,16 @@ void MachineFrame::connectComponents() {
         this->sendUpdateRequest("updateall"); 
     });
 
+    connect (this->ui->deleteBtn, &QToolButton::clicked, [this] {
+        this->updateTimer->stop();
+        emit this->machineDeleted(this);
+    });
+
+    connect(this->ui->memoryBtn, &QPushButton::clicked, [this] {
+        ProcessFrame * process = new ProcessFrame (this);
+        this->ui->verticalLayout_10->addWidget(process);
+     });
+
     connect (this->updateTimer, &QTimer::timeout, [this] {
         // this->setUpdateLabelTime();
         this->sendUpdateRequest("updateall"); 
@@ -50,6 +61,9 @@ void MachineFrame::setJwtToken(const QByteArray & token) {
 }
 
 void MachineFrame::sendUpdateRequest (const QString route) {
+    if (this->jwtToken == nullptr)
+        return;
+   
     QString url = "https://" + this->ui->ipaddressLabel->text() + ":2908/" + route;
     
     QNetworkRequest request;
@@ -153,10 +167,12 @@ void MachineFrame::getOSInfo() {
             QByteArrayList osInfoList = response.split('\n');
             QByteArray osName = osInfoList[0].split('=')[1];
             QByteArray osVersion = osInfoList[1].split('=')[1];
+            QByteArray arch = osInfoList[2];
             
             osName = osName.mid(1, osName.size() - 2);
             osVersion = osVersion.mid(1, osVersion.size() - 2);
             this->ui->osLabel->setText(osName + " " + osVersion);
+            this->ui->archLabel->setText(arch);
         }
 
         reply->deleteLater();
@@ -226,7 +242,7 @@ void MachineFrame::setDiskUsage(const QByteArray & response) {
     text.append(" GB / ");
     text.append(totalSpace);
     text.append(" GB");
-    // std::cout << usedSpace.toDouble() << ' ' << totalSpace.toDouble() << '\n';
+   
     this->ui->diskUsageLabel->setText(text);
     this->ui->diskProgBar->setRange(0, (int)totalSpace.toDouble());
     this->ui->diskProgBar->setValue((int)usedSpace.toDouble());
@@ -249,6 +265,10 @@ void MachineFrame::handleErrOccurred(const QNetworkReply * reply) {
             this->machineIsOn = false;
             this->updateTimer->stop();
         }
+}
+
+QString MachineFrame::getMachineName () {
+    return this->ui->machineName->text();
 }
 
 MachineFrame::~MachineFrame() {

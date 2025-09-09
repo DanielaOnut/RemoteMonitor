@@ -203,10 +203,14 @@ pair Thread::getSysInfo(const QByteArray & request) {
     char osName[500], osVersion[500];
     fin.getline (osName, 500);
     fin.getline (osVersion, 500);
+    struct utsname cpuArch;
+    uname (&cpuArch);
 
     response.first = osName;
     response.first.append("\n");
     response.first.append(osVersion);
+    response.first.append("\n");
+    response.first.append(cpuArch.machine);
     response.first.append("\n");
     return response;
 }
