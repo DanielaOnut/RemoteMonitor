@@ -35,7 +35,7 @@ public:
     bool clientExists (const std::string);
     QString & getDeviceNameByClient (const char *);
     QByteArray getHttpResponse (const char *, const char *);
-    void sendResponse (QSslSocket *, const QByteArray &);
+    void sendResponse (QSslSocket *, const QByteArray);
 
     ~Server();
 

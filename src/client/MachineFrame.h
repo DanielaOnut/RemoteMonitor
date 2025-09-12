@@ -9,10 +9,12 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <ctime>
+#include <map>
 #include <iostream>
 #include <ctime>
 #include <stdio.h>
 #include <iomanip> 
+#include "ProcessFrame.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MachineFrame; }
@@ -27,11 +29,14 @@ private:
 
     QNetworkAccessManager * manager;
     QString * jwtToken = nullptr;
-    QTimer * updateTimer;
+    QTimer * overviewTimer;
     bool machineIsOn = true;
 
     long long totalCpu = 0;
     long long workCpu = 0;
+
+    std::map<int, ProcessFrame *> processesList;
+
 public:
     explicit MachineFrame(QWidget *parent, const QString & machineName, const QString & ipaddress);
 
@@ -44,7 +49,8 @@ public:
     void setCpuUsage (const QByteArray &);
     void setRamUsage (const QByteArray &);
     void setDiskUsage (const QByteArray &);
-    void handleErrOccurred (const QNetworkReply *);
+    void createProcList(const QByteArrayList &);
+    void handleErrOccurred(const QNetworkReply *);
     bool isMachineOn () { return this->machineIsOn; };
     QString getMachineName ();
     

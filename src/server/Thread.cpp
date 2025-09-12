@@ -15,7 +15,7 @@ pair Thread::getJwt(const QByteArray & data) {
     QByteArray machineName = data.data() + machineIndex;
     
     QString id = QUuid::createUuid().toString(QUuid::WithoutBraces); 
-    QMetaObject::invokeMethod(this->server, [this, &id, &deviceName] {
+    QMetaObject::invokeMethod(this->server, [this, id, deviceName] {
         this->server->updateClientsMap(id, deviceName);
     });
 
@@ -87,13 +87,13 @@ pair Thread::verifyToken(const QByteArray &request) {
         return {"Failed: jwt token doesn't have any claim named 'id'", "401 Unauthorized"};
 
     std::string id = decoded.get_payload_claim("id").as_string();
-    // if (!this->server->clientExists(id))
-    //     return {"Failed: no client exists with this id", "401 Unauthorized"};
+    if (!this->server->clientExists(id))
+        return {"Failed: no client exists with this id", "401 Unauthorized"};
 
     try {
         auto verifier = jwt::verify()
             .with_issuer("remoteserver")
-            // .with_claim("id", jwt::claim(id))
+            .with_claim("id", jwt::claim(id))
             .allow_algorithm(jwt::algorithm::hs256{"remote-monitor-project-super-key"});
 
         verifier.verify(decoded);
@@ -129,6 +129,8 @@ pair Thread::updateStats (const QByteArray & request) {
     response = {this->getCpuUsage(), "200 OK"};
     response.first.append(this->getRamUsage());
     response.first.append(this->getDiskUsage());
+    response.first.append(this->getProcessesList());
+
     return response;
 }
 
@@ -192,6 +194,66 @@ std::string Thread::getDiskUsage() {
             .append("\n");
 
     return response;
+}
+
+std::string Thread::getProcessesList() {
+    std::string response;
+
+    for (const auto &dirEntry : dir_iterator("/proc")) 
+        if (dirEntry.is_directory()) {
+            std::string path = dirEntry.path();
+            std::string pid = path.substr(path.find("proc/") + 5);
+            int pidVal = 0;
+            if (this->isStringANumber(pid))
+                pidVal = std::stol(pid);
+
+            if (pidVal > 1100) {
+                response.append("Proc: " + pid + " ");
+
+                std::ifstream fin (path + "/comm");
+                char procName[100];
+                fin.getline(procName, 100);  
+                response.append(procName).append(" ");
+                
+                std::ifstream cpuInfoPath (path + "/stat");
+                char statBuffer[500], *p, utime[50], stime[50];
+                int fieldCounter = 0;
+                cpuInfoPath.getline(statBuffer, 500);
+                p = strtok (statBuffer, " ");
+                while (p) {
+                    fieldCounter++;
+                    if (fieldCounter == 14) // utime field
+                        strcpy (utime, p);
+                    if (fieldCounter == 15) { // stime field
+                        strcpy (stime, p); 
+                        break;
+                    }
+                    p = strtok(NULL, " ");
+                }
+
+                response.append(utime).append(" ") 
+                        .append(stime).append(" "); 
+
+                std::ifstream ramFile (path + "/smaps");
+                std::string key, value, unit;
+                int pssSum = 0;
+                while (ramFile >> key >> value >> unit) 
+                    if (key.contains("Pss:")) {
+                        pssSum += std::stol(value);
+                    }
+                response.append(std::to_string(pssSum / 1024.0))
+                        .append("\n");
+            }
+        }
+    // std::cout << response;
+    return response;
+}
+
+bool Thread::isStringANumber (const std::string &s) {
+    std::string::const_iterator it = s.begin();
+    while (it != s.end() && std::isdigit(*it))
+        ++it;
+    return !s.empty() && it == s.end();
 }
 
 pair Thread::getSysInfo(const QByteArray & request) {

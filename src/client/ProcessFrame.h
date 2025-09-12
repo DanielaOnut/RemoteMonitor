@@ -15,9 +15,16 @@ class ProcessFrame : public QFrame
 private:
     Ui::ProcessFrame *ui;
 
-public:
-    explicit ProcessFrame(QWidget *parent);
+    long long cpuTime = 0;
+    long long procTime = 0;
 
+public:
+    explicit ProcessFrame(QWidget *parent, int, std::string, long long, long long, float);
+
+    void updateCpuUsage(long long, long long);
+    void updateRamUsage (float);
+
+    ~ProcessFrame();
 };
 
 #endif // PROCESSFRAME_H

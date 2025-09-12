@@ -9,9 +9,11 @@
 #include <jwt-cpp/jwt.h>
 #include <sys/statvfs.h>
 #include <sys/utsname.h>
+#include <filesystem>
 #include "Server.h"
 
 typedef std::pair <std::string, const char*> pair;
+using dir_iterator = std::filesystem::directory_iterator;
 
 class Thread : public QRunnable
 {
@@ -31,8 +33,10 @@ public:
     std::string getCpuUsage ();
     std::string getRamUsage ();
     std::string getDiskUsage ();
+    std::string getProcessesList ();
     pair getSysInfo (const QByteArray &);
-   
+    bool isStringANumber (const std::string &);
+
     void run() override;
 
     ~Thread();

@@ -1,6 +1,5 @@
 #include "MachineFrame.h"
 #include "ui_MachineFrame.h"
-#include "ProcessFrame.h"
 
 MachineFrame::MachineFrame(QWidget *parent, const QString & machineName, const QString & ipaddress)
     : QFrame(parent)
@@ -9,10 +8,10 @@ MachineFrame::MachineFrame(QWidget *parent, const QString & machineName, const Q
     ui->setupUi(this);
 
     this->manager = new QNetworkAccessManager(this);
-    this->updateTimer = new QTimer (this);
+    this->overviewTimer = new QTimer (this);
 
-    this->updateTimer->setInterval(1000);
-    this->updateTimer->start();
+    this->overviewTimer->setInterval(1000);
+    this->overviewTimer->start();
     this->ui->machineName->setText(machineName);
     this->ui->ipaddressLabel->setText(ipaddress);
 
@@ -40,16 +39,11 @@ void MachineFrame::connectComponents() {
     });
 
     connect (this->ui->deleteBtn, &QToolButton::clicked, [this] {
-        this->updateTimer->stop();
+        this->overviewTimer->stop();
         emit this->machineDeleted(this);
     });
 
-    connect(this->ui->memoryBtn, &QPushButton::clicked, [this] {
-        ProcessFrame * process = new ProcessFrame (this);
-        this->ui->verticalLayout_10->addWidget(process);
-     });
-
-    connect (this->updateTimer, &QTimer::timeout, [this] {
+    connect (this->overviewTimer, &QTimer::timeout, [this] {
         // this->setUpdateLabelTime();
         this->sendUpdateRequest("updateall"); 
     });
@@ -58,6 +52,7 @@ void MachineFrame::connectComponents() {
 void MachineFrame::setJwtToken(const QByteArray & token) {
     this->jwtToken = new QString(token);
     this->getOSInfo();
+    this->sendUpdateRequest("updateall");
 }
 
 void MachineFrame::sendUpdateRequest (const QString route) {
@@ -74,16 +69,16 @@ void MachineFrame::sendUpdateRequest (const QString route) {
     QNetworkReply * reply = this->manager->get(request);
     connect (reply, &QNetworkReply::readyRead, [this, reply, request, url] {
         QByteArray response = reply->readAll();
+        std::cout << response.toStdString() << '\n';
         
         if (response.contains("token expired")) 
             this->getNewJwtToken(reply, request);
         else if (!response.contains("Failed")) {
             /// TODO: to keep a list of clients connected in the past (id based)
             /// to set the server online after it's up 
-            std::cout << response.toStdString() << '\n';
 
             if (!this->machineIsOn) {
-                this->updateTimer->start();
+                this->overviewTimer->start();
                 this->machineIsOn = true;
                 this->ui->statusLabel->setStyleSheet("background-color: rgba(220,252,231,255); color: rgb(1, 102, 48);");
                 this->ui->statusLabel->setText("Online");
@@ -96,10 +91,15 @@ void MachineFrame::sendUpdateRequest (const QString route) {
             }
         
             this->setUpdateLabelTime();
-            QByteArrayList statusesList = response.split('\n');
-            this->setCpuUsage(statusesList[0]);
-            this->setRamUsage(statusesList[1]);
-            this->setDiskUsage(statusesList[2]);
+            QByteArrayList infoList = response.split('\n');
+            this->setCpuUsage(infoList[0]);
+            this->setRamUsage(infoList[1]);
+            this->setDiskUsage(infoList[2]);
+            this->createProcList(infoList);
+            int procNo = this->processesList.size();
+            QString text = "Running processes (";
+            text.append(QString::number(procNo)).append(")");
+            this->ui->proccessesNoLabel->setText(text);
         }
 
         reply->deleteLater();
@@ -248,7 +248,29 @@ void MachineFrame::setDiskUsage(const QByteArray & response) {
     this->ui->diskProgBar->setValue((int)usedSpace.toDouble());
 }
 
-void MachineFrame::handleErrOccurred(const QNetworkReply * reply) {
+void MachineFrame::createProcList(const QByteArrayList & procList) {
+    for (auto & procLine : procList) 
+        if (procLine.contains("Proc:")) {
+            QByteArrayList procInfo = procLine.split(' ');
+            int pid = procInfo[1].toInt();
+            long long procTime = procInfo[3].toLongLong() + procInfo[4].toLongLong();
+            float ramUsed = procInfo[5].toFloat();
+
+            if (!this->processesList.contains(pid)) {
+                std::string procName = procInfo[2].toStdString();
+
+                ProcessFrame *newProc = new ProcessFrame (this, pid, procName, procTime, this->totalCpu, ramUsed);
+                this->ui->verticalLayout_10->addWidget(newProc);
+                this->processesList[pid] = newProc;
+            }
+            else {
+                this->processesList[pid]->updateCpuUsage(procTime, this->totalCpu);
+                this->processesList[pid]->updateRamUsage(ramUsed);
+            }
+        }
+}
+
+void MachineFrame::handleErrOccurred(const QNetworkReply *reply) {
     if (reply->error() == QNetworkReply::ConnectionRefusedError
     || reply->error() == QNetworkReply::HostNotFoundError
     || reply->error() == QNetworkReply::TimeoutError) 
@@ -263,7 +285,7 @@ void MachineFrame::handleErrOccurred(const QNetworkReply * reply) {
             this->ui->stackedWidget->hide();
             emit this->connRefused();
             this->machineIsOn = false;
-            this->updateTimer->stop();
+            this->overviewTimer->stop();
         }
 }
 
@@ -274,7 +296,7 @@ QString MachineFrame::getMachineName () {
 MachineFrame::~MachineFrame() {
     delete this->ui;
     delete this->manager;
-    delete this->updateTimer;
+    delete this->overviewTimer;
 
     if (this->jwtToken != nullptr)
         delete this->jwtToken;

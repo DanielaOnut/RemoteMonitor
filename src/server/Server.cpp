@@ -82,10 +82,15 @@ QString & Server::getDeviceNameByClient(const char * id) {
     return this->clientsMap[id];
 }
 
-void Server::sendResponse(QSslSocket * socket, const QByteArray & response) {
-    socket->write(response);
-    socket->flush();
-    socket->disconnectFromHost();
+void Server::sendResponse(QSslSocket * socket, const QByteArray response) {
+    if (socket == nullptr)
+        return;
+
+    if (socket && socket->state() == QAbstractSocket::ConnectedState) {
+        socket->write(response);
+        socket->flush();
+        socket->disconnectFromHost();
+    }
     socket->deleteLater();
 }
 
