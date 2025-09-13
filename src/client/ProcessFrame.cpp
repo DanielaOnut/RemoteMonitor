@@ -17,6 +17,9 @@ ProcessFrame::ProcessFrame(QWidget *parent, int pid, std::string procName, long 
 }
 
 void ProcessFrame::updateCpuUsage(long long newProcTime, long long newCpuTime) {
+    if (newProcTime <= this->procTime || newCpuTime <= this->procTime)
+        return;
+
     long long procDelta = newProcTime - this->procTime; 
     long long cpuDelta = newCpuTime - this->cpuTime; 
     float usage = (float) procDelta / cpuDelta * 100;

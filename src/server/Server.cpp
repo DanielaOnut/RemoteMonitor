@@ -90,8 +90,8 @@ void Server::sendResponse(QSslSocket * socket, const QByteArray response) {
         socket->write(response);
         socket->flush();
         socket->disconnectFromHost();
+        socket->deleteLater();
     }
-    socket->deleteLater();
 }
 
 

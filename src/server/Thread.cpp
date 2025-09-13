@@ -208,29 +208,32 @@ std::string Thread::getProcessesList() {
                 pidVal = std::stol(pid);
 
             if (pidVal > 1100) {
-                response.append("Proc: " + pid + " ");
-
                 std::ifstream fin (path + "/comm");
-                char procName[100];
-                fin.getline(procName, 100);  
-                response.append(procName).append(" ");
-                
+                std::string procName;
+                std::getline(fin, procName);
+                if (procName.empty()) continue;
+                procName.erase(std::remove_if(procName.begin(), procName.end(), isspace), procName.end());
+
                 std::ifstream cpuInfoPath (path + "/stat");
-                char statBuffer[500], *p, utime[50], stime[50];
-                int fieldCounter = 0;
-                cpuInfoPath.getline(statBuffer, 500);
-                p = strtok (statBuffer, " ");
-                while (p) {
+                std::string statBuffer, field, utime, stime;
+                std::getline(cpuInfoPath, statBuffer);
+                if (statBuffer.empty()) continue;
+
+                std::istringstream iss(statBuffer.substr(statBuffer.find_last_of(')') + 2));
+                int fieldCounter = 3;
+                while (iss >> field) {
                     fieldCounter++;
-                    if (fieldCounter == 14) // utime field
-                        strcpy (utime, p);
-                    if (fieldCounter == 15) { // stime field
-                        strcpy (stime, p); 
+                    if (fieldCounter == 14)
+                        utime = field;
+                    if (fieldCounter == 15) {
+                        stime = field;
                         break;
                     }
-                    p = strtok(NULL, " ");
                 }
+                if (utime.empty() || stime.empty()) continue;
 
+                response.append("Proc: " + pid + " ");
+                response.append(procName).append(" ");
                 response.append(utime).append(" ") 
                         .append(stime).append(" "); 
 
@@ -241,7 +244,7 @@ std::string Thread::getProcessesList() {
                     if (key.contains("Pss:")) {
                         pssSum += std::stol(value);
                     }
-                response.append(std::to_string(pssSum / 1024.0))
+                response.append(std::to_string(pssSum))
                         .append("\n");
             }
         }

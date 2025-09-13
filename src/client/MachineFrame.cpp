@@ -10,7 +10,7 @@ MachineFrame::MachineFrame(QWidget *parent, const QString & machineName, const Q
     this->manager = new QNetworkAccessManager(this);
     this->overviewTimer = new QTimer (this);
 
-    this->overviewTimer->setInterval(1000);
+    this->overviewTimer->setInterval(2000);
     this->overviewTimer->start();
     this->ui->machineName->setText(machineName);
     this->ui->ipaddressLabel->setText(ipaddress);
@@ -252,9 +252,11 @@ void MachineFrame::createProcList(const QByteArrayList & procList) {
     for (auto & procLine : procList) 
         if (procLine.contains("Proc:")) {
             QByteArrayList procInfo = procLine.split(' ');
+            if (procInfo.size() < 6) continue;
+
             int pid = procInfo[1].toInt();
             long long procTime = procInfo[3].toLongLong() + procInfo[4].toLongLong();
-            float ramUsed = procInfo[5].toFloat();
+            float ramUsed = procInfo[5].toInt() / 1024.0;
 
             if (!this->processesList.contains(pid)) {
                 std::string procName = procInfo[2].toStdString();
