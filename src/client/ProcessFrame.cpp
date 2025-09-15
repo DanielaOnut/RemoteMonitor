@@ -6,6 +6,7 @@ ProcessFrame::ProcessFrame(QWidget *parent, int pid, std::string procName, long 
 {
     ui->setupUi (this);
 
+    this->pid = pid;
     this->ui->pidLabel->setText("PID: " + QString::number(pid));
     this->ui->procNameLabel->setText(procName.c_str());
     this->ui->ramLabel->setText(QString::number(ramUsage, 'f', 1).append(" MB"));
@@ -27,7 +28,19 @@ void ProcessFrame::updateCpuUsage(long long newProcTime, long long newCpuTime) {
 }
 
 void ProcessFrame::updateRamUsage(float ramUsage) {
-    this->ui->ramLabel->setText(QString::number(ramUsage, 'f', 1).append(" MB"));
+    this->ui->ramLabel->setText(QString::number(ramUsage, 'f', 1).append(" MB RAM"));
+}
+
+float ProcessFrame::getCpuUsage() {
+    std::string usageLabel = this->ui->cpuLabel->text().toStdString();
+    float value;
+    std::istringstream iss(usageLabel);
+    iss >> value;
+    return value;
+}
+
+int ProcessFrame::getPid() {
+    return this->pid;
 }
 
 ProcessFrame::~ProcessFrame() {

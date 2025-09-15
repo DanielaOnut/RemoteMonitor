@@ -8,8 +8,11 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QJsonDocument>
 #include <ctime>
-#include <map>
+#include <vector>
 #include <iostream>
 #include <ctime>
 #include <stdio.h>
@@ -35,7 +38,9 @@ private:
     long long totalCpu = 0;
     long long workCpu = 0;
 
-    std::map<int, ProcessFrame *> processesList;
+    std::vector<ProcessFrame *> processesList;
+    ProcessFrame * procExists (int);
+    QByteArray getJsonProcList ();
 
 public:
     explicit MachineFrame(QWidget *parent, const QString & machineName, const QString & ipaddress);

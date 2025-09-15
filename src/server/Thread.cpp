@@ -129,7 +129,7 @@ pair Thread::updateStats (const QByteArray & request) {
     response = {this->getCpuUsage(), "200 OK"};
     response.first.append(this->getRamUsage());
     response.first.append(this->getDiskUsage());
-    response.first.append(this->getProcessesList());
+    response.first.append(this->getProcessesList(request));
 
     return response;
 }
@@ -196,9 +196,18 @@ std::string Thread::getDiskUsage() {
     return response;
 }
 
-std::string Thread::getProcessesList() {
-    std::string response;
+std::string Thread::getProcessesList(const QByteArray & request) {
+    std::set<int> topProcs;
+    if (request.contains("importantProcs")) {
+        std::string procsString = request.toStdString();
+        std::replace(procsString.begin(), procsString.end(), ',', ' ');
+        std::istringstream iss (procsString.substr(procsString.find(":[") + 2));
+        int procPid;
+        while (iss >> procPid) 
+            topProcs.insert(procPid);
+    }
 
+    std::string response;
     for (const auto &dirEntry : dir_iterator("/proc")) 
         if (dirEntry.is_directory()) {
             std::string path = dirEntry.path();
@@ -235,20 +244,22 @@ std::string Thread::getProcessesList() {
                 response.append("Proc: " + pid + " ");
                 response.append(procName).append(" ");
                 response.append(utime).append(" ") 
-                        .append(stime).append(" "); 
+                        .append(stime).append(" ");
 
-                std::ifstream ramFile (path + "/smaps");
-                std::string key, value, unit;
-                int pssSum = 0;
-                while (ramFile >> key >> value >> unit) 
-                    if (key.contains("Pss:")) {
-                        pssSum += std::stol(value);
-                    }
+                int pssSum = -1;
+                if (topProcs.empty() || topProcs.contains(pidVal)) {
+                    std::ifstream ramFile(path + "/smaps");
+                    std::string key, value, unit;
+                    pssSum = 0;
+                    while (ramFile >> key >> value >> unit) 
+                        if (key.contains("Pss:")) {
+                            pssSum += std::stol(value);
+                        }
+                }
                 response.append(std::to_string(pssSum))
                         .append("\n");
             }
         }
-    // std::cout << response;
     return response;
 }
 

@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QFrame>
+#include <sstream>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class ProcessFrame; }
@@ -15,6 +16,7 @@ class ProcessFrame : public QFrame
 private:
     Ui::ProcessFrame *ui;
 
+    int pid;
     long long cpuTime = 0;
     long long procTime = 0;
 
@@ -23,6 +25,8 @@ public:
 
     void updateCpuUsage(long long, long long);
     void updateRamUsage (float);
+    float getCpuUsage ();
+    int getPid ();
 
     ~ProcessFrame();
 };

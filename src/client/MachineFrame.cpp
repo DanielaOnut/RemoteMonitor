@@ -66,7 +66,15 @@ void MachineFrame::sendUpdateRequest (const QString route) {
     QString authHeader = "Bearer " + *this->jwtToken;
     request.setRawHeader("Authorization", authHeader.toUtf8());
 
-    QNetworkReply * reply = this->manager->get(request);
+    QNetworkReply *reply;
+    if (this->processesList.empty())
+        reply = this->manager->get(request);
+    else {
+        request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        QByteArray body = this->getJsonProcList();
+        reply = this->manager->post(request, body);
+    }
+
     connect (reply, &QNetworkReply::readyRead, [this, reply, request, url] {
         QByteArray response = reply->readAll();
         std::cout << response.toStdString() << '\n';
@@ -257,22 +265,56 @@ void MachineFrame::createProcList(const QByteArrayList & procList) {
             int pid = procInfo[1].toInt();
             long long procTime = procInfo[3].toLongLong() + procInfo[4].toLongLong();
             float ramUsed = procInfo[5].toInt() / 1024.0;
-
-            if (!this->processesList.contains(pid)) {
+            
+            ProcessFrame * proc = this->procExists(pid);
+            if (proc == nullptr) {
                 std::string procName = procInfo[2].toStdString();
-
+                
                 ProcessFrame *newProc = new ProcessFrame (this, pid, procName, procTime, this->totalCpu, ramUsed);
-                this->ui->verticalLayout_10->addWidget(newProc);
-                this->processesList[pid] = newProc;
+                this->processesList.push_back(newProc);
             }
             else {
-                this->processesList[pid]->updateCpuUsage(procTime, this->totalCpu);
-                this->processesList[pid]->updateRamUsage(ramUsed);
+                proc->updateCpuUsage(procTime, this->totalCpu);
+                if (ramUsed > 0)
+                    proc->updateRamUsage(ramUsed);
             }
         }
+    std::sort (this->processesList.begin(), this->processesList.end(), 
+            [](ProcessFrame * p1, ProcessFrame * p2) {
+                return p1->getCpuUsage() > p2->getCpuUsage();
+            });
+
+    for (auto & proc : this->processesList)
+        this->ui->verticalLayout_10->addWidget(proc);
 }
 
-void MachineFrame::handleErrOccurred(const QNetworkReply *reply) {
+ProcessFrame * MachineFrame::procExists (int pid) {
+    for (auto proc : this->processesList)
+        if (proc->getPid() == pid)
+            return proc;
+    
+    return nullptr;
+}
+
+QByteArray MachineFrame::getJsonProcList () {
+    QJsonArray procs;
+    QJsonObject json;
+    int counter = 0;
+    for (auto & proc : this->processesList) {
+        procs << proc->getPid();
+        counter++;
+        if (counter == 20)
+            break;
+    }
+    
+    json["importantProcs"] = procs;
+    QJsonDocument doc(json);
+    return doc.toJson(QJsonDocument::Compact);
+}
+
+    void
+    MachineFrame::handleErrOccurred(const QNetworkReply *reply)
+{
     if (reply->error() == QNetworkReply::ConnectionRefusedError
     || reply->error() == QNetworkReply::HostNotFoundError
     || reply->error() == QNetworkReply::TimeoutError) 

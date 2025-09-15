@@ -33,7 +33,7 @@ public:
     std::string getCpuUsage ();
     std::string getRamUsage ();
     std::string getDiskUsage ();
-    std::string getProcessesList ();
+    std::string getProcessesList(const QByteArray &);
     pair getSysInfo (const QByteArray &);
     bool isStringANumber (const std::string &);
 
