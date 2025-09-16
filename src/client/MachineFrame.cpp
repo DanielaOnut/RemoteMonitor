@@ -9,6 +9,7 @@ MachineFrame::MachineFrame(QWidget *parent, const QString & machineName, const Q
 
     this->manager = new QNetworkAccessManager(this);
     this->overviewTimer = new QTimer (this);
+    this->procsOrderBtn = this->ui->cpuBtn;
 
     this->overviewTimer->setInterval(2000);
     this->overviewTimer->start();
@@ -44,8 +45,22 @@ void MachineFrame::connectComponents() {
     });
 
     connect (this->overviewTimer, &QTimer::timeout, [this] {
-        // this->setUpdateLabelTime();
         this->sendUpdateRequest("updateall"); 
+    });
+
+    connect(this->ui->cpuBtn, &QPushButton::clicked, [this] { 
+        this->setBtnsStyles(this->ui->cpuBtn);
+        this->sortProcsByBtn();
+    });
+
+    connect(this->ui->memoryBtn, &QPushButton::clicked, [this] { 
+        this->setBtnsStyles(this->ui->memoryBtn);
+        this->sortProcsByBtn();
+    });
+
+    connect(this->ui->nameBtn, &QPushButton::clicked, [this] { 
+        this->setBtnsStyles(this->ui->nameBtn);
+        this->sortProcsByBtn();
     });
 }
 
@@ -279,13 +294,11 @@ void MachineFrame::createProcList(const QByteArrayList & procList) {
                     proc->updateRamUsage(ramUsed);
             }
         }
-    std::sort (this->processesList.begin(), this->processesList.end(), 
-            [](ProcessFrame * p1, ProcessFrame * p2) {
-                return p1->getCpuUsage() > p2->getCpuUsage();
-            });
+    this->sortProcsByBtn();
 
-    for (auto & proc : this->processesList)
-        this->ui->verticalLayout_10->addWidget(proc);
+    this->ui->topProcNameLabel->setText(this->processesList[0]->getName());
+    this->ui->topProcCpuLabel->setText(this->processesList[0]->getCpuLabel());
+    this->ui->topProcMemLabel->setText(this->processesList[0]->getRamLabel());
 }
 
 ProcessFrame * MachineFrame::procExists (int pid) {
@@ -297,10 +310,16 @@ ProcessFrame * MachineFrame::procExists (int pid) {
 }
 
 QByteArray MachineFrame::getJsonProcList () {
+    std::vector <ProcessFrame *> procListCopy = this->processesList;
+    std::sort(procListCopy.begin(), procListCopy.end(),
+              [](ProcessFrame *p1, ProcessFrame *p2) {
+                  return p1->getCpuUsage() > p2->getCpuUsage();
+              });
+
     QJsonArray procs;
     QJsonObject json;
     int counter = 0;
-    for (auto & proc : this->processesList) {
+    for (auto & proc : procListCopy) {
         procs << proc->getPid();
         counter++;
         if (counter == 20)
@@ -312,9 +331,7 @@ QByteArray MachineFrame::getJsonProcList () {
     return doc.toJson(QJsonDocument::Compact);
 }
 
-    void
-    MachineFrame::handleErrOccurred(const QNetworkReply *reply)
-{
+void MachineFrame::handleErrOccurred(const QNetworkReply *reply) {
     if (reply->error() == QNetworkReply::ConnectionRefusedError
     || reply->error() == QNetworkReply::HostNotFoundError
     || reply->error() == QNetworkReply::TimeoutError) 
@@ -335,6 +352,72 @@ QByteArray MachineFrame::getJsonProcList () {
 
 QString MachineFrame::getMachineName () {
     return this->ui->machineName->text();
+}
+
+void MachineFrame::setBtnsStyles(QPushButton * clickedBtn) {
+    if (this->procsOrderBtn != clickedBtn) {
+        const char *style = "border : 2px solid #ececf0;";
+        this->ui->memoryBtn->setStyleSheet(style);
+        this->ui->cpuBtn->setStyleSheet(style);
+        this->ui->nameBtn->setStyleSheet(style);
+        clickedBtn->setStyleSheet("border : 2px solid rgb(0, 0, 0);");
+        this->procsOrderBtn = clickedBtn;
+    }
+    else {
+        if (!procsOrder) {
+            QPixmap image(":images/images/up.png");
+            this->ui->orderLabel->setPixmap(image);
+            procsOrder = 1;
+        }
+        else {
+            QPixmap image(":images/images/down.png");
+            this->ui->orderLabel->setPixmap(image);
+            procsOrder = 0;
+        }
+    }
+
+}
+
+void MachineFrame::sortProcsByBtn() {
+    if (this->procsOrderBtn == this->ui->cpuBtn) {
+        if (!procsOrder)
+            std::sort (this->processesList.begin(), this->processesList.end(), 
+                    [](ProcessFrame * p1, ProcessFrame * p2) {
+                        return p1->getCpuUsage() > p2->getCpuUsage();
+                    });
+        else
+            std::sort(this->processesList.begin(), this->processesList.end(),
+                      [](ProcessFrame *p1, ProcessFrame *p2) {
+                          return p1->getCpuUsage() < p2->getCpuUsage();
+                      });
+    }
+    else if (this->procsOrderBtn == this->ui->memoryBtn) {
+        if (!procsOrder)
+            std::sort (this->processesList.begin(), this->processesList.end(), 
+                    [](ProcessFrame * p1, ProcessFrame * p2) {
+                        return p1->getRamUsage() > p2->getRamUsage();
+                    });
+        else
+            std::sort(this->processesList.begin(), this->processesList.end(),
+                      [](ProcessFrame *p1, ProcessFrame *p2) {
+                          return p1->getRamUsage() < p2->getRamUsage();
+                      });
+    }
+    else if (this->procsOrderBtn == this->ui->nameBtn) {
+        if (!procsOrder)
+            std::sort (this->processesList.begin(), this->processesList.end(), 
+                    [](ProcessFrame * p1, ProcessFrame * p2) {
+                        return p1->getName() > p2->getName();
+                    });
+        else
+            std::sort(this->processesList.begin(), this->processesList.end(),
+                      [](ProcessFrame *p1, ProcessFrame *p2) {
+                          return p1->getName() < p2->getName();
+                      });
+    }
+
+    for (auto &proc : this->processesList)
+        this->ui->verticalLayout_10->addWidget(proc);
 }
 
 MachineFrame::~MachineFrame() {

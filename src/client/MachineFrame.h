@@ -11,6 +11,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QJsonDocument>
+#include <QPushButton>
 #include <ctime>
 #include <vector>
 #include <iostream>
@@ -37,6 +38,8 @@ private:
 
     long long totalCpu = 0;
     long long workCpu = 0;
+    int procsOrder = 0;
+    QPushButton * procsOrderBtn;
 
     std::vector<ProcessFrame *> processesList;
     ProcessFrame * procExists (int);
@@ -58,7 +61,9 @@ public:
     void handleErrOccurred(const QNetworkReply *);
     bool isMachineOn () { return this->machineIsOn; };
     QString getMachineName ();
-    
+    void setBtnsStyles(QPushButton *);
+    void sortProcsByBtn ();
+
     ~MachineFrame();
 
 signals:

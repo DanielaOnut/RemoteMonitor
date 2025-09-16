@@ -26,7 +26,11 @@ public:
     void updateCpuUsage(long long, long long);
     void updateRamUsage (float);
     float getCpuUsage ();
+    float getRamUsage ();
     int getPid ();
+    QString getName();
+    QString getCpuLabel();
+    QString getRamLabel();
 
     ~ProcessFrame();
 };

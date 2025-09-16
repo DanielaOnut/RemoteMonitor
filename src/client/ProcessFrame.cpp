@@ -39,8 +39,28 @@ float ProcessFrame::getCpuUsage() {
     return value;
 }
 
+float ProcessFrame::getRamUsage() {
+    std::string usageLabel = this->ui->ramLabel->text().toStdString();
+    float value;
+    std::istringstream iss(usageLabel);
+    iss >> value;
+    return value;
+}
+
 int ProcessFrame::getPid() {
     return this->pid;
+}
+
+QString ProcessFrame::getName() {
+    return this->ui->procNameLabel->text();
+}
+
+QString ProcessFrame::getCpuLabel() {
+    return this->ui->cpuLabel->text();
+}
+
+QString ProcessFrame::getRamLabel() {
+    return this->ui->ramLabel->text();
 }
 
 ProcessFrame::~ProcessFrame() {
