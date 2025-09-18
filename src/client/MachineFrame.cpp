@@ -286,6 +286,8 @@ void MachineFrame::createProcList(const QByteArrayList & procList) {
                 std::string procName = procInfo[2].toStdString();
                 
                 ProcessFrame *newProc = new ProcessFrame (this, pid, procName, procTime, this->totalCpu, ramUsed);
+                connect (newProc, &ProcessFrame::sendKillProcReq, this, &MachineFrame::sendKillProcReq);
+
                 this->processesList.push_back(newProc);
             }
             else {
@@ -418,6 +420,57 @@ void MachineFrame::sortProcsByBtn() {
 
     for (auto &proc : this->processesList)
         this->ui->verticalLayout_10->addWidget(proc);
+}
+
+void MachineFrame::sendKillProcReq (int pid) {
+    QString url = "https://" + this->ui->ipaddressLabel->text() + ":2908/killproc";
+
+    QNetworkRequest request;
+    request.setUrl(QUrl(url));
+    QString authHeader = "Bearer " + *this->jwtToken;
+    request.setRawHeader("Authorization", authHeader.toUtf8());
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QJsonObject json;
+    json["process"] = pid;
+    QJsonDocument doc(json);
+    QByteArray body = doc.toJson(QJsonDocument::Compact);
+
+    QNetworkReply *reply = this->manager->post(request, body);
+    connect(reply, &QNetworkReply::readyRead, [this, reply, request, url, pid] {
+        QByteArray response = reply->readAll();
+        
+        if (response.contains("token expired")) 
+            this->getNewJwtToken(reply, request);
+        else if (response.contains("Process killed successfully")) {
+            std::cout << response.toStdString() << '\n';
+            emit this->closeKillProcDialog();
+            this->removeProcFromList(pid);
+        }
+
+        reply->deleteLater(); 
+    });
+
+    connect(reply, &QNetworkReply::sslErrors, [reply](const QList<QSslError> &errors) { 
+        reply->ignoreSslErrors(); 
+    });
+
+    connect(reply, &QNetworkReply::errorOccurred, [this, reply] {
+        this->handleErrOccurred(reply);
+        reply->deleteLater(); 
+    });
+}
+
+void MachineFrame::removeProcFromList (int pid) {
+    auto it = std::remove_if(this->processesList.begin(), this->processesList.end(),
+                             [pid](ProcessFrame *proc) {
+                                 if (proc->getPid() == pid) {
+                                     delete proc; 
+                                     return true; 
+                                 }
+                                 return false;
+                             });
+    this->processesList.erase(it, this->processesList.end());
 }
 
 MachineFrame::~MachineFrame() {

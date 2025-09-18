@@ -23,6 +23,9 @@ add_executable(RemoteMonitor
         src/client/ProcessFrame.h
         src/client/ProcessFrame.cpp
         src/client/processframe.ui
+        src/client/KillProcess.h
+        src/client/KillProcess.cpp
+        src/client/killprocess.ui
         resources/resources.qrc
 )
 

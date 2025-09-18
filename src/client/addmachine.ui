@@ -289,8 +289,14 @@ QPushButton:hover {
         </size>
        </property>
        <property name="styleSheet">
-        <string notr="true">border-radius: 5px;  
-border: 1px solid #d3d3d3;</string>
+        <string notr="true">* {
+border-radius: 5px;  
+border: 1px solid #d3d3d3;
+}
+
+QPushButton:hover {
+	background-color: #e9ebef;
+}</string>
        </property>
        <property name="text">
         <string>Cancel</string>

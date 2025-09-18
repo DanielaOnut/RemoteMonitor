@@ -220,7 +220,8 @@ std::string Thread::getProcessesList(const QByteArray & request) {
                 std::ifstream fin (path + "/comm");
                 std::string procName;
                 std::getline(fin, procName);
-                if (procName.empty()) continue;
+                if (procName.empty() || procName == "server" || procName == "RemoteMonitor")
+                    continue;
                 procName.erase(std::remove_if(procName.begin(), procName.end(), isspace), procName.end());
 
                 std::ifstream cpuInfoPath (path + "/stat");
@@ -291,10 +292,26 @@ pair Thread::getSysInfo(const QByteArray & request) {
     return response;
 }
 
+pair Thread::killProc(const QByteArray & request) {
+    pair response = this->verifyToken(request);
+    if (response.first.contains("Failed"))
+        return response;
+    
+    std::string s = request.toStdString();
+    s = s.substr(s.find("process") + strlen("process") + 2);
+    int pid;
+    std::istringstream iss (s);
+    iss >> pid;
+    kill(pid, SIGTERM);
+
+    response = {"Process killed successfully", "200 OK"};
+    return response;
+}
+
 void Thread::run () {
     std::cout << "\nReceived request:\n" << this->requestData.data() << "\n";
     
-    pair msg;
+    pair msg = {"No endpoint matches the search query", "400 Bad Request"};
     if (requestData.contains("/register")) 
         msg = this->getJwt(requestData);
     else if (requestData.contains("/updatejwt"))
@@ -303,6 +320,8 @@ void Thread::run () {
         msg = this->updateStats(requestData);
     else if (requestData.contains("/sysinfo"))
         msg = this->getSysInfo(requestData);
+    else if (requestData.contains("/killproc"))
+        msg = this->killProc(requestData);
 
     QMetaObject::invokeMethod(this->server, [this, msg] {
         QByteArray response = this->server->getHttpResponse(msg.first.c_str(), msg.second);

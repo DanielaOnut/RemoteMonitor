@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>682</width>
-    <height>58</height>
+    <height>60</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -46,7 +46,7 @@ border-radius: 10px;</string>
        <number>20</number>
       </property>
       <property name="rightMargin">
-       <number>20</number>
+       <number>10</number>
       </property>
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_10">
@@ -100,7 +100,7 @@ border-radius: 10px;</string>
          <number>0</number>
         </property>
         <property name="rightMargin">
-         <number>20</number>
+         <number>0</number>
         </property>
         <item>
          <widget class="QLabel" name="ramLabel">
@@ -133,6 +133,12 @@ border-radius: 10px;</string>
       </item>
       <item>
        <widget class="QPushButton" name="killBtn">
+        <property name="minimumSize">
+         <size>
+          <width>40</width>
+          <height>40</height>
+         </size>
+        </property>
         <property name="maximumSize">
          <size>
           <width>20</width>
@@ -147,9 +153,15 @@ border-radius: 10px;</string>
          </font>
         </property>
         <property name="styleSheet">
-         <string notr="true">color: rgb(255, 0, 0);
+         <string notr="true">* {
+color: rgb(255, 0, 0);
 border-color: rgb(255, 0, 0);
-border: 2px solid rgba(249,250,251,255);;</string>
+border: 2px solid rgba(249,250,251,255);
+}
+
+QPushButton:hover {
+	background-color: rgb(255, 238, 239);
+}</string>
         </property>
         <property name="text">
          <string>x</string>

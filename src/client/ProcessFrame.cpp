@@ -1,8 +1,10 @@
 #include "ProcessFrame.h"
 #include "ui_processframe.h"
+#include "KillProcess.h"
+#include "MachineFrame.h"
 
-ProcessFrame::ProcessFrame(QWidget *parent, int pid, std::string procName, long long procTime, long long cpuTime, float ramUsage)
-    : QFrame(parent), ui(new Ui::ProcessFrame)
+ProcessFrame::ProcessFrame(MachineFrame *parent, int pid, std::string procName, long long procTime, long long cpuTime, float ramUsage)
+    : QFrame(parent), parentFrame(parent), ui(new Ui::ProcessFrame)
 {
     ui->setupUi (this);
 
@@ -15,6 +17,22 @@ ProcessFrame::ProcessFrame(QWidget *parent, int pid, std::string procName, long 
     this->procTime = procTime;
     float usage = (float)this->procTime / this->cpuTime * 100;
     this->ui->cpuLabel->setText(QString::number(usage, 'f', 1).append(" % CPU"));
+
+    connect (this->ui->killBtn, &QPushButton::clicked, [this] {
+        KillProcess * dialog = new KillProcess(this, this->getName(), this->pid);
+       
+        connect (dialog, &KillProcess::requestProcessKill, [this] (int pid) {
+            emit this->sendKillProcReq (pid);
+        });
+
+        connect(parentFrame, &MachineFrame::closeKillProcDialog,
+                [dialog] { 
+                    if (dialog != nullptr) 
+                        dialog->close(); 
+                });
+
+        dialog->exec();
+    });
 }
 
 void ProcessFrame::updateCpuUsage(long long newProcTime, long long newCpuTime) {

@@ -44,6 +44,7 @@ private:
     std::vector<ProcessFrame *> processesList;
     ProcessFrame * procExists (int);
     QByteArray getJsonProcList ();
+    void removeProcFromList (int);
 
 public:
     explicit MachineFrame(QWidget *parent, const QString & machineName, const QString & ipaddress);
@@ -66,10 +67,14 @@ public:
 
     ~MachineFrame();
 
+public slots:
+    void sendKillProcReq (int);
+
 signals:
     void connRefused();
     void connReestablished();
     void machineDeleted(MachineFrame *);
+    void closeKillProcDialog();
 };
 
 #endif // MACHINEFRAME_H

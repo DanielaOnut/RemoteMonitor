@@ -9,6 +9,8 @@
 #include <jwt-cpp/jwt.h>
 #include <sys/statvfs.h>
 #include <sys/utsname.h>
+#include <csignal>
+#include <unistd.h>
 #include <filesystem>
 #include "Server.h"
 
@@ -30,6 +32,7 @@ public:
     pair updateJwt (const QByteArray &);
     pair verifyToken (const QByteArray &);
     pair updateStats (const QByteArray &);
+    pair killProc (const QByteArray &);
     std::string getCpuUsage ();
     std::string getRamUsage ();
     std::string getDiskUsage ();
