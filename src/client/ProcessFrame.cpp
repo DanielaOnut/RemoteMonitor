@@ -20,16 +20,14 @@ ProcessFrame::ProcessFrame(MachineFrame *parent, int pid, std::string procName, 
 
     connect (this->ui->killBtn, &QPushButton::clicked, [this] {
         KillProcess * dialog = new KillProcess(this, this->getName(), this->pid);
-       
+        dialog->setAttribute(Qt::WA_DeleteOnClose);
+
         connect (dialog, &KillProcess::requestProcessKill, [this] (int pid) {
             emit this->sendKillProcReq (pid);
         });
 
         connect(parentFrame, &MachineFrame::closeKillProcDialog,
-                [dialog] { 
-                    if (dialog != nullptr) 
-                        dialog->close(); 
-                });
+                dialog, [dialog] { dialog->close(); });
 
         dialog->exec();
     });

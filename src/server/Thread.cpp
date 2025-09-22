@@ -129,8 +129,20 @@ pair Thread::updateStats (const QByteArray & request) {
     response = {this->getCpuUsage(), "200 OK"};
     response.first.append(this->getRamUsage());
     response.first.append(this->getDiskUsage());
+    response.first.append(this->getCpuTemp());
     response.first.append(this->getProcessesList(request));
 
+    return response;
+}
+
+std::string Thread::getCpuTemp() {
+    std::ifstream fin("/sys/class/thermal/thermal_zone0/temp");
+    int value;
+    fin >> value;
+
+    std::string response = "CPU temp: ";
+    response.append(std::to_string(value / 1000));
+    response.append(" °C\n");
     return response;
 }
 

@@ -771,7 +771,7 @@ background-color: #ececf0;</string>
                     <string/>
                    </property>
                    <property name="pixmap">
-                    <pixmap resource="../../resources/resources.qrc">:/images/images/network.png</pixmap>
+                    <pixmap resource="../../resources/resources.qrc">:/images/images/thermometer.png</pixmap>
                    </property>
                    <property name="scaledContents">
                     <bool>true</bool>
@@ -784,7 +784,7 @@ background-color: #ececf0;</string>
                     <string notr="true">color: rgb(91, 91, 91);</string>
                    </property>
                    <property name="text">
-                    <string>Network</string>
+                    <string>Temperture</string>
                    </property>
                   </widget>
                  </item>
@@ -794,11 +794,27 @@ background-color: #ececf0;</string>
                 <layout class="QHBoxLayout" name="horizontalLayout_6">
                  <item>
                   <widget class="QLabel" name="label_11">
+                   <property name="maximumSize">
+                    <size>
+                     <width>40</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
                    <property name="styleSheet">
                     <string notr="true">color: rgb(120, 120, 120);</string>
                    </property>
                    <property name="text">
-                    <string>8 connections</string>
+                    <string>CPU:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="tempLabel">
+                   <property name="styleSheet">
+                    <string notr="true">color: rgb(0, 170, 0);</string>
+                   </property>
+                   <property name="text">
+                    <string>63 C</string>
                    </property>
                   </widget>
                  </item>
@@ -1118,8 +1134,8 @@ border: 2px solid rgb(0, 0, 0);</string>
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>724</width>
-               <height>250</height>
+               <width>80</width>
+               <height>20</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_10"/>

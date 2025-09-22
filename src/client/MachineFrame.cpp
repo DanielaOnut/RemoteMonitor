@@ -118,6 +118,7 @@ void MachineFrame::sendUpdateRequest (const QString route) {
             this->setCpuUsage(infoList[0]);
             this->setRamUsage(infoList[1]);
             this->setDiskUsage(infoList[2]);
+            this->setCpuTemp(infoList[3]);
             this->createProcList(infoList);
             int procNo = this->processesList.size();
             QString text = "Running processes (";
@@ -269,6 +270,15 @@ void MachineFrame::setDiskUsage(const QByteArray & response) {
     this->ui->diskUsageLabel->setText(text);
     this->ui->diskProgBar->setRange(0, (int)totalSpace.toDouble());
     this->ui->diskProgBar->setValue((int)usedSpace.toDouble());
+}
+
+void MachineFrame::setCpuTemp(const QByteArray & response) {
+    if (!response.contains("CPU temp: "))
+        return;
+
+    std::string textVal = response.toStdString();
+    textVal = textVal.substr(textVal.find("temp: ") + 6);
+    this->ui->tempLabel->setText(QString::fromStdString(textVal));
 }
 
 void MachineFrame::createProcList(const QByteArrayList & procList) {

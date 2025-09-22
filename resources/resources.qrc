@@ -23,5 +23,6 @@
         <file>images/text.png</file>
         <file>images/up.png</file>
         <file>images/down.png</file>
+        <file>images/thermometer.png</file>
     </qresource>
 </RCC>

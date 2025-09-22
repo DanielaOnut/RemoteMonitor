@@ -33,6 +33,7 @@ public:
     pair verifyToken (const QByteArray &);
     pair updateStats (const QByteArray &);
     pair killProc (const QByteArray &);
+    std::string getCpuTemp ();
     std::string getCpuUsage ();
     std::string getRamUsage ();
     std::string getDiskUsage ();

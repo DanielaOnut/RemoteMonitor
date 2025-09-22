@@ -58,6 +58,7 @@ public:
     void setCpuUsage (const QByteArray &);
     void setRamUsage (const QByteArray &);
     void setDiskUsage (const QByteArray &);
+    void setCpuTemp (const QByteArray &);
     void createProcList(const QByteArrayList &);
     void handleErrOccurred(const QNetworkReply *);
     bool isMachineOn () { return this->machineIsOn; };
